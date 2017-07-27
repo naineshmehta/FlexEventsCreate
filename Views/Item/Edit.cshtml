@@ -21,7 +21,7 @@
             </div>
             <div class="dnnFormFlexEvent">
                 <div><label for="itemUser">@Dnn.LocalizeString("lblAssignedUser")</label></div>
-                @Html.DropDownListFor(m => m.AssignedUserId, (IEnumerable<SelectListItem>)ViewBag.Users, "Choose...")
+                @Html.DropDownListFor(m => m.AssignedUserId, (Object)ViewBag.Users, "Choose...")
             </div>
             @Html.HiddenFor(m => m.ModuleId)
         </fieldset>

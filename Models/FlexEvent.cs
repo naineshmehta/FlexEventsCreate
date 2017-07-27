@@ -11,10 +11,10 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Web.Caching;
-using DotNetNuke.Common.Utilities;
+using System.Web.Mvc;
 using DotNetNuke.ComponentModel.DataAnnotations;
-using DotNetNuke.Entities.Content;
 
 namespace NM.Modules.FlexEventsCreate.Models
 {
@@ -41,9 +41,16 @@ namespace NM.Modules.FlexEventsCreate.Models
         ///</summary>
         public string Summary { get; set; }
         public string FullDescription { get; set; }
+
         public DateTime StartDateTime { get; set; }
+
         public DateTime EndDateTime { get; set; }
+
         public string Logo { get; set; }
+        public Location Location { get; set; }
+        public List<Location> Locations { get; set; }
+        public List<SelectListItem> LocationList { get; set; }
+        public int LocationId { get; set; }
         
         ///<summary>
         /// The ModuleId of where the object was created and gets displayed

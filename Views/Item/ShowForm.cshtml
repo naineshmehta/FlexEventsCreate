@@ -1,17 +1,339 @@
-﻿@inherits DotNetNuke.Web.Mvc.Framework.DnnWebViewPage<NM.Modules.FlexEventsCreate.Models.FlexEvent>
+﻿@inherits DotNetNuke.Web.Mvc.Framework.DnnWebViewPage<NM.Modules.FlexEventsCreate.Models.FlexEventViewModel>
 @using DotNetNuke.Web.Mvc.Helpers
 
+<link href="https://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<link href="~/DesktopModules/MVC/FlexEventsCreate/Scripts/Pikaday/pikaday.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
 
-<div id="Items-@Dnn.ModuleContext.ModuleId">
-    
-    @Html.TextBoxFor(x => x.ItemName)
-    @Html.TextAreaFor(x => x.Summary)
-    
-    
+<fieldset>
+        <legend>Location Details</legend>
+        <div class="row" style="width: 100%; display: block; float: left;">
+            <div id="pnlLocations" class="medium-12 columns">
+                <label>Check if the location of your event is in our pre-populated list below</label>
+                @Html.DropDownListFor(x => x.LocationId, Model.LocationList, new { style = "height:30px" })
+            </div>
+        </div>
 
-</div>
+        <div class="row" style="margin-bottom: 20px;">
+
+            <a class="medium-12 columns" id="btnShowMap" onclick="DisplayMap();">Cannot find your location? Click here to search for a new location</a>
+
+            <div style="width: 100%; display: block; float: left; display: none;" id="pnlMap">
+                <div class="medium-12 columns">
+                    @Html.TextBox("pac-input", "", new { placeholder = "Search for your event location" })
+                </div>
+
+                <div class="medium-6 columns">
+                    <div id="map" style="width: 100%; height: 400px; display: block; float: left"></div>
+                </div>
+                <div class="medium-6 columns" style="display: block; float: left; padding-left: 20px;">
+                    Name: @Html.TextBoxFor(x => x.Location.Name)
+                    Location: @Html.TextBoxFor(x => x.Location.Address, "", new { @readonly = true })
+                    Latitude: @Html.TextBoxFor(x => x.Location.Latitude, "", new { @readonly = true })
+                    Longitude: @Html.TextBoxFor(x => x.Location.Longitude, "", new { @readonly = true })
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+
+<fieldset>
+    <legend>Event Details</legend>
+    <div class="row">
+        <div class="large-12 columns">
+            <label>Event Name</label>
+            @Html.TextBoxFor(x => x.EventName, "", new { placeholder = "Enter your event name" })
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns">
+            <label>Short Description</label>
+            @Html.TextBoxFor(x => x.Summary, "", new { placeholder = "Enter a summary of event" })
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns" id="divFullDesc">
+            <label>
+                Full Description
+            </label>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-6 columns">
+            <label>Start Date</label>
+            @Html.TextBoxFor(x => x.StartDateTime, new { placeholder = "Enter the start date of Event" })
+        </div>
+        <div class="large-6 columns">
+            <label>End Date </label>
+            @Html.TextBoxFor(x => x.EndDateTime, new { placeholder = "Enter the end date of Event" })
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns">
+            <label>Upload Logo (see requirements below)</label>
+            <ul>
+                <li>Minimum of 400px (width) (ideally 400px x 400px)</li>
+                <li>File Size no bigger than 100kb</li>
+            </ul>
+            @Html.TextBoxFor(x => x.Logo, null, new { type = "file", accept = "image/x-png,image/gif,image/jpeg" })
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns">
+            <table>
+                <tr>
+                    <td>Height</td>
+                    <td>Width</td>
+                    <td>File Size</td>
+                </tr>
+                <tr>
+                    <td><i id="checkHeight" class="fa fa-times fa-3x"></i></td>
+                    <td><i id="checkWidth" class="fa fa-times fa-3x"></i></td>
+                    <td><i id="checkFileSize" class="fa fa-times fa-3x"></i></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns">
+            <label>Logo Preview</label>
+            <img src="~/DesktopModules/MVC/FlexEventsCreate/Images/nologo.png" width="200px" height="200px" id="imgPreview" name="imgPreview" />
+            <br /><br />
+        </div>
+    </div>
+    <div class="row">
+        <div class="large-12 columns">
+            <input class="button" type="submit" id="btnUploadEvent" value="Upload your event" />
+        </div>
+    </div>
+</fieldset>
 
 <script>
-    
+    $('#btnUploadEvent').click(function () {
+        event.preventDefault();
+
+        var formdata = new FormData(); //FormData object
+        var fileInput = document.getElementById('Logo');
+        //Iterating through each files selected in fileInput
+        for (i = 0; i < fileInput.files.length; i++) {
+            //Appending each file to FormData object
+            formdata.append(fileInput.files[i].name, fileInput.files[i]);
+        }
+
+        //Creating an XMLHttpRequest and sending
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '@Url.Action("Item", "ShowForm")');
+        xhr.send(formdata);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                alert(xhr.responseText);
+            }
+        }
+        return false;
+
+        @*$.ajax({
+            url: '/DesktopModules/MVC/FlexEventsCreate/Item/ShowForm',
+            type: 'POST',
+            dataType: 'html',
+            headers: {
+                "ModuleId": @Dnn.ModuleContext.ModuleId,
+                "TabId": @Dnn.ModuleContext.TabId,
+                "RequestVerificationToken": $("input[name='__RequestVerificationToken']").val()
+            },
+            success: function (response) {
+                jsonPart = response.substring(0, response.indexOf("<!DOCTYPE html>"));
+                var data = JSON.parse(jsonPart);
+                if (data.success) {
+                    alert("Great");
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert("Error!");
+            }
+        });*@
+    })
 
 </script>
+
+<script type="text/javascript">
+        var start, end;
+
+        $(document).ready(function () {
+            start = new Pikaday({
+                field: $('#StartDateTime')[0],
+                firstDay: 1,
+                minDate: new Date(),
+                format: 'DD MMM YYYY',
+                yearRange: 2
+            });
+
+            end = new Pikaday({
+                field: $('#EndDateTime')[0],
+                firstDay: 1,
+                minDate: new Date(),
+                format: 'DD MMM YYYY',
+                yearRange: 2
+            });
+        });
+
+        //$(window).keydown(function (event) {
+        //    if (event.keyCode === 13) {
+        //        event.preventDefault();
+        //        return false;
+        //    }
+        //});
+
+        $('#Logo').change(function () {
+            var message = [];
+            var image = new Image();
+            var file = this.files && this.files[0];
+
+            if (file.size < 100000) {
+                $('#checkFileSize').removeClass('fa-times').addClass('fa-check');
+            } else {
+                $('#checkFileSize').removeClass('fa-check').addClass('fa-times');
+            }
+
+            image.src = window.URL.createObjectURL(file);
+            image.onload = function () {
+                if (image.naturalWidth < 400) {
+                    message.unshift("The width of the image is less than 400px");
+                    $('#checkWidth').removeClass('fa-check').addClass('fa-times');
+                } else {
+                    $('#checkWidth').removeClass('fa-times').addClass('fa-check');
+                }
+                if (image.naturalHeight < 400) {
+                    message.unshift("The height of the image is less than 400px");
+                    $('#checkHeight').removeClass('fa-check').addClass('fa-times');
+                } else {
+                    $('#checkHeight').removeClass('fa-times').addClass('fa-check');
+                }
+            };
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#imgPreview').attr('src', e.target.result);
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+        function DisplayMap() {
+            var panel = $('#pnlMap');
+            var pnlLocations = $('#pnlLocations');
+            if (panel.is(':visible')) {
+                panel.hide();
+                pnlLocations.show();
+                $('#btnShowMap').text('Cannot find your location? Click here to search for a new location');
+
+            } else {
+                panel.show();
+                pnlLocations.hide();
+                initAutocomplete();
+                $('#btnShowMap').text("GO BACK -> Click here to view pre-selected locations");
+            }
+        }
+
+        function initAutocomplete() {
+            var map = new google.maps.Map(document.getElementById('map'),
+            {
+                center: { lat: 51.509865, lng: -0.118092 },
+                zoom: 10,
+                mapTypeId: 'roadmap'
+            });
+
+            // Create the search box and link it to the UI element.
+            var input = document.getElementById('pac-input');
+            var searchBox = new google.maps.places.SearchBox(input);
+            //map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+            // Bias the SearchBox results towards current map's viewport.
+            map.addListener('bounds_changed',
+                function () {
+                    searchBox.setBounds(map.getBounds());
+                });
+
+            var markers = [];
+
+            // Listen for the event fired when the user selects a prediction and retrieve
+            // more details for that place.
+            searchBox.addListener('places_changed',
+                function () {
+                    var places = searchBox.getPlaces();
+                    var txtName = $('#Location_Name');
+                    var txtTitle = $('#Location_Address');
+                    var txtLat = $('#Location_Latitude');
+                    var txtLon = $('#Location_Longitude');
+
+                    if (places.length === 0) {
+                        return;
+                    }
+
+                    if (places.length === 1) {
+                        txtName.val(places[0].name);
+                        txtTitle.val(places[0].formatted_address);
+                        txtLat.val(places[0].geometry.location.lat());
+                        txtLon.val(places[0].geometry.location.lng());
+                    }
+
+                    // Clear out the old markers.
+                    markers.forEach(function (marker) {
+                        marker.setMap(null);
+                    });
+                    markers = [];
+
+                    // For each place, get the icon, name and location.
+                    var bounds = new google.maps.LatLngBounds();
+                    places.forEach(function (place) {
+                        if (!place.geometry) {
+                            console.log("Returned place contains no geometry");
+                            return;
+                        }
+
+                        // Create a marker for each place.
+                        var marker = new google.maps.Marker({
+                            map: map,
+                            title: place.name,
+                            position: place.geometry.location,
+                            draggable: true,
+                            title: 'Drag me to move'
+                        });
+
+                        markers.push(marker);
+
+                        google.maps.event.addListener(marker,
+                            "click",
+                            function (event) {
+                                console.log(event);
+                                console.log(event.latLng.lat());
+                                txtName.val(place.name);
+                                txtTitle.val(place.formatted_address);
+                                txtLat.val(event.latLng.lat());
+                                txtLon.val(event.latLng.lng());
+                            });
+
+                        google.maps.event.addListener(marker,
+                            'dragend',
+                            function (event) {
+                                txtLat.val(event.latLng.lat());
+                                txtLon.val(event.latLng.lng());
+                            });
+
+                        if (place.geometry.viewport) {
+                            // Only geocodes have viewport.
+                            bounds.union(place.geometry.viewport);
+                        } else {
+                            bounds.extend(place.geometry.location);
+                        }
+                    });
+                    map.fitBounds(bounds);
+                });
+        }
+
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQkYL6wzVaHIjoGR8DfuRbTZxI6YEDc1A&callback=initAutocomplete&libraries=places"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.6.1/pikaday.min.js"></script>

@@ -11,75 +11,62 @@
 */
 
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Web.Mvc;
 using NM.Modules.FlexEventsCreate.Components;
 using NM.Modules.FlexEventsCreate.Models;
 using DotNetNuke.Web.Mvc.Framework.Controllers;
 using DotNetNuke.Web.Mvc.Framework.ActionFilters;
-using DotNetNuke.Entities.Users;
-using DotNetNuke.Framework.JavaScriptLibraries;
 
 namespace NM.Modules.FlexEventsCreate.Controllers
 {
     [DnnHandleError]
     public class ItemController : DnnController
     {
-
-        public ActionResult Delete(int itemId)
-        {
-            ItemManager.Instance.DeleteItem(itemId, ModuleContext.ModuleId);
-            return RedirectToDefaultRoute();
-        }
-
-        public ActionResult Edit(int itemId = -1)
-        {
-            DotNetNuke.Framework.JavaScriptLibraries.JavaScript.RequestRegistration(CommonJs.DnnPlugins);
-
-            var userlist = UserController.GetUsers(PortalSettings.PortalId);
-            var users = from user in userlist.Cast<UserInfo>().ToList()
-                        select new SelectListItem { Text = user.DisplayName, Value = user.UserID.ToString() };
-
-            ViewBag.Users = users;
-
-            var item = (itemId == -1)
-                 ? new FlexEvent { ModuleId = ModuleContext.ModuleId }
-                 : ItemManager.Instance.GetItem(itemId, ModuleContext.ModuleId);
-
-            return View(item);
-        }
-
+        [AllowAnonymous]
         [HttpPost]
-        [DotNetNuke.Web.Mvc.Framework.ActionFilters.ValidateAntiForgeryToken]
-        public ActionResult Index(FlexEvent flexEvent)
+        public ActionResult ShowForm(FlexEventViewModel flexEvent)
         {
-            if (flexEvent.ItemId == -1)
+            if (ModelState.IsValid)
             {
-                flexEvent.CreatedByUserId = User.UserID;
-                flexEvent.CreatedOnDate = DateTime.UtcNow;
-                flexEvent.LastModifiedOnDate = DateTime.UtcNow;
+                var file = Request.Files;
 
-                ItemManager.Instance.CreateItem(flexEvent);
-            }
-            else
-            {
-                var existingItem = ItemManager.Instance.GetItem(flexEvent.ItemId, flexEvent.ModuleId);
-                existingItem.LastModifiedOnDate = DateTime.UtcNow;
-                existingItem.ItemName = flexEvent.ItemName;
-                existingItem.Summary = flexEvent.Summary;
-                
-                ItemManager.Instance.UpdateItem(existingItem);
+                if (file.Count != 0)
+                {
+                    //do something  
+                }
+
+                //return RedirectToDefaultRoute();
             }
 
-            return RedirectToDefaultRoute();
+            return View(flexEvent);
         }
 
         [ModuleAction(ControlKey = "Edit", TitleKey = "AddItem")]
+        [HttpGet]
         public ActionResult ShowForm()
         {
-            //var items = ItemManager.Instance.GetItem(ModuleContext.ModuleId, ModuleContext.ModuleId);
-            var flexEvent = new FlexEvent();
-            flexEvent.ModuleId = ModuleContext.ModuleId;
+            var flexEvent = new FlexEventViewModel();
+
+            var locations = LocationManager.Instance.Get(722);
+            locations.Insert(0, new Location {ItemId = 0, Name = "==Please select a location=="});
+
+            //flexEvent.ModuleId = ModuleContext.ModuleId;
+            //flexEvent.Locations = locations;
+
+            var list = new List<SelectListItem>();
+
+            foreach (var loc in locations)
+            {
+                var item = new SelectListItem();
+                item.Text = loc.Name;
+                item.Value = loc.ItemId.ToString();
+                list.Add(item);
+            }
+
+            flexEvent.LocationList = list;
+            flexEvent.StartDateTime = DateTime.Now;
+            flexEvent.EndDateTime = DateTime.Now;
 
             return View(flexEvent);
         }
